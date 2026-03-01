@@ -25,16 +25,19 @@
         </style>
         <script id="vshader" type="x-shader/x-vertex">
             attribute vec4 vPosition;
-            attribute vec4 vColor;          // per-vertex color coming from material
-            attribute vec3 vNormal;         // per-vertex normal
-            uniform mat4 uMVP;              // model-view-projection matrix
+            attribute vec4 vColor;
+            attribute vec3 vNormal;
+            attribute vec2 vTexCoord;       // UV coordinates
+            uniform mat4 uMVP;
             varying vec4 fColor;
             varying vec3 fNormal;
+            varying vec2 fTexCoord;
 
             void main() {
                 gl_Position = uMVP * vPosition;
                 fColor = vColor;
                 fNormal = normalize(vNormal);
+                fTexCoord = vTexCoord;
             }
         </script>
 
@@ -42,16 +45,25 @@
             precision mediump float;
             varying vec4 fColor;
             varying vec3 fNormal;
-            uniform vec3 uLightDirection;  // assumed normalized
+            varying vec2 fTexCoord;
+            uniform vec3 uLightDirection;
             uniform vec4 uLightColor;
             uniform vec4 uAmbientColor;
+            uniform sampler2D uSampler;
+            uniform bool uTextured;
+
             void main() {
-                // simple Lambertian diffuse lighting + ambient
+                vec4 baseColor;
+                if (uTextured) {
+                    baseColor = texture2D(uSampler, fTexCoord);
+                } else {
+                    baseColor = fColor;
+                }
                 float nDotL = max(dot(fNormal, normalize(uLightDirection)), 0.0);
                 vec4 diffuse = uLightColor * nDotL;
                 vec4 ambient = uAmbientColor;
                 vec4 lighting = ambient + diffuse;
-                gl_FragColor = fColor * lighting;
+                gl_FragColor = baseColor * lighting;
             }
         </script>
 
