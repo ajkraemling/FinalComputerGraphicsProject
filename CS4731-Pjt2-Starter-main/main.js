@@ -18,8 +18,8 @@ function main() {
     let car      = new Model("data/car.obj",       "data/car.mtl");
     let character= new Model("data/hollow_knight.obj",       "data/hollow_knight.mtl");
     let street   = new Model(
-        "https://web.cs.wpi.edu/~jmcuneo/cs4731/project3/street.obj",
-        "https://web.cs.wpi.edu/~jmcuneo/cs4731/project3/street.mtl"
+        "data/mini_tiles.obj",
+        "data/mini_tiles.mtl"
     );
 
     let models = [lamp, car, street, character];

@@ -1,10 +1,10 @@
-# Blender 4.2.9 LTS MTL File: 'mini_tiles.blend'
+# Blender 4.2.9 LTS MTL File: 'None'
 # www.blender.org
 
 newmtl tile
 Ns 200.000000
 Ka 1.000000 1.000000 1.000000
-Kd 0.021577 0.014465 0.071029
+Kd 0.260669 0.119199 1.000000
 Ks 0.500000 0.500000 0.500000
 Ke 0.000000 0.000000 0.000000
 Ni 1.500000
