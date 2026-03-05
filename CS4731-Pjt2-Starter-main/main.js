@@ -7,6 +7,8 @@ function main() {
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     let program = initShaders(gl, "vshader", "fshader");
     resizeCanvasToDisplaySize(gl.canvas);
@@ -21,8 +23,9 @@ function main() {
         "data/mini_tiles.obj",
         "data/mini_tiles.mtl"
     );
+    let dirtmouthBuildings = new Model("data/dirtmouth_buildings_blend.obj", "data/dirtmouth_buildings_blend.mtl");
 
-    let models = [lamp, car, street, character];
+    let models = [lamp, car, street, character, dirtmouthBuildings];
 
     // CHARACTER STATE
     let characterPos   = vec3(0.0, 0.0, 0.0);
@@ -38,6 +41,50 @@ function main() {
     const keys = {};
     window.addEventListener('keydown', e => keys[e.key] = true);
     window.addEventListener('keyup',   e => keys[e.key] = false);
+
+    // CAMERA CONTROLS
+    let cameraAzimuth = 180.0;  // Horizontal rotation around character (in degrees) - start behind character
+    let cameraElevation = 30.96; // Vertical angle (in degrees) - matches original y=3.0 at correct distance
+    let cameraDistance = Math.sqrt(34); // Distance from character - matches original sqrt(0+9+25)
+    let isMouseDown = false;
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+
+    canvas.addEventListener('mousedown', (e) => {
+        isMouseDown = true;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+        e.preventDefault();
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (!isMouseDown) return;
+        
+        let deltaX = e.clientX - lastMouseX;
+        let deltaY = e.clientY - lastMouseY;
+        
+        // Adjust sensitivity
+        let sensitivity = 0.5;
+        cameraAzimuth += deltaX * sensitivity;
+        cameraElevation += deltaY * sensitivity;
+        
+        // Clamp elevation to prevent flipping
+        cameraElevation = Math.max(-80, Math.min(80, cameraElevation));
+        
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+        e.preventDefault();
+    });
+
+    canvas.addEventListener('mouseup', (e) => {
+        isMouseDown = false;
+        e.preventDefault();
+    });
+
+    // Prevent context menu on right click
+    canvas.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+    });
 
     const vPositionLoc = gl.getAttribLocation(program, "vPosition");
     const vNormalLoc   = gl.getAttribLocation(program, "vNormal");
@@ -56,12 +103,13 @@ function main() {
 
     const modelMatrices = new Map();
 
+    // change character size, location, and orientation
     function buildCharacterMatrix() {
         if (!character._initialized) return mat4();
         let m = mat4();
         m = mult(translate(characterPos[0], characterPos[1] + CHARACTER_Y_OFFSET, characterPos[2]), m);
         m = mult(m, rotateY(characterAngle));
-        m = mult(m, scalem(0.5, 0.5, 0.5))
+        m = mult(m, scalem(0.3, 0.3, 0.3))
 
         return m;
     }
@@ -125,9 +173,15 @@ function main() {
 
         updateCharacter();
 
-        // Follow camera
-        let rad       = characterAngle * Math.PI / 180.0;
-        let camOffset = vec3(-Math.sin(rad) * 5.0, 3.0, -Math.cos(rad) * 5.0);
+        // Follow camera with mouse controls
+        let azimuthRad = (characterAngle + cameraAzimuth) * Math.PI / 180.0;
+        let elevationRad = cameraElevation * Math.PI / 180.0;
+        
+        let camX = cameraDistance * Math.sin(azimuthRad) * Math.cos(elevationRad);
+        let camY = cameraDistance * Math.sin(elevationRad);
+        let camZ = cameraDistance * Math.cos(azimuthRad) * Math.cos(elevationRad);
+        
+        let camOffset = vec3(camX, camY, camZ);
         let eye       = add(characterPos, camOffset);
         let at        = add(characterPos, vec3(0, 1, 0));
         view          = lookAt(eye, at, vec3(0, 1, 0));

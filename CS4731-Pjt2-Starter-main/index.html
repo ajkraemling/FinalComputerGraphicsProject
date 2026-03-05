@@ -63,7 +63,7 @@
                 vec4 diffuse = uLightColor * nDotL;
                 vec4 ambient = uAmbientColor;
                 vec4 lighting = ambient + diffuse;
-                gl_FragColor = baseColor * lighting;
+                gl_FragColor = vec4(baseColor.rgb * lighting.rgb, baseColor.a);
             }
         </script>
 
