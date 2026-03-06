@@ -46,39 +46,48 @@ function main() {
     let cameraAzimuth = 180.0;  // Horizontal rotation around character (in degrees) - start behind character
     let cameraElevation = 30.96; // Vertical angle (in degrees) - matches original y=3.0 at correct distance
     let cameraDistance = Math.sqrt(34); // Distance from character - matches original sqrt(0+9+25)
-    let isMouseDown = false;
-    let lastMouseX = 0;
-    let lastMouseY = 0;
+    let isPointerLocked = false;
+    let pointerLockInfo = document.getElementById('pointerLockInfo');
 
-    canvas.addEventListener('mousedown', (e) => {
-        isMouseDown = true;
-        lastMouseX = e.clientX;
-        lastMouseY = e.clientY;
-        e.preventDefault();
+    // Request pointer lock on click
+    canvas.addEventListener('click', () => {
+        canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock;
+        canvas.requestPointerLock();
     });
 
+    // Update camera on any mouse movement
     canvas.addEventListener('mousemove', (e) => {
-        if (!isMouseDown) return;
+        if (!isPointerLocked) return;
         
-        let deltaX = e.clientX - lastMouseX;
-        let deltaY = e.clientY - lastMouseY;
+        let deltaX = e.movementX;
+        let deltaY = e.movementY;
         
         // Adjust sensitivity
-        let sensitivity = 0.5;
+        let sensitivity = 0.75;
         cameraAzimuth += deltaX * sensitivity;
         cameraElevation += deltaY * sensitivity;
         
         // Clamp elevation to prevent flipping
         cameraElevation = Math.max(-80, Math.min(80, cameraElevation));
         
-        lastMouseX = e.clientX;
-        lastMouseY = e.clientY;
         e.preventDefault();
     });
 
-    canvas.addEventListener('mouseup', (e) => {
-        isMouseDown = false;
-        e.preventDefault();
+    // Track pointer lock state
+    document.addEventListener('pointerlockchange', () => {
+        isPointerLocked = (document.pointerLockElement === canvas || 
+                          document.mozPointerLockElement === canvas);
+        if (pointerLockInfo) {
+            pointerLockInfo.classList.toggle('locked', isPointerLocked);
+        }
+    });
+
+    document.addEventListener('mozpointerlockchange', () => {
+        isPointerLocked = (document.pointerLockElement === canvas || 
+                          document.mozPointerLockElement === canvas);
+        if (pointerLockInfo) {
+            pointerLockInfo.classList.toggle('locked', isPointerLocked);
+        }
     });
 
     // Prevent context menu on right click
