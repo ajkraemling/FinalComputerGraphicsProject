@@ -21,9 +21,12 @@ function main() {
     let body = new Model("data/knight_body.obj",  "data/knight_body.mtl");
     let head = new Model("data/knight_head.obj",  "data/knight_head.mtl");
     let sword = new Model("data/knight_sword.obj", "data/knight_sword.mtl");
+    let dog = new Model("data/dog.obj", "data/dog.mtl");
+    dog.textured = true;
+    dog.imagePath = "data/dogtexture.png";
     let street = new Model("data/mini_tiles.obj","data/mini_tiles.mtl");
     let dirtmouthBuildings = new Model("data/dirtmouth_buildings_blend.obj", "data/dirtmouth_buildings_blend.mtl");
-    let models = [lamp, street, body, head, sword, dirtmouthBuildings];
+    let models = [lamp, street, body, head, sword, dirtmouthBuildings, dog];
 
     // CHARACTER STATE
     let characterPos = vec3(0.0, 0.0, 0.0);
@@ -528,6 +531,11 @@ function main() {
                     modelMatrix = buildHeadMatrix();
                 } else if (m === sword) {
                     modelMatrix = buildSwordMatrix();
+                }else if (m === dog) {
+                    modelMatrix = mult(
+                        translate(3.0, 1.5, 0.0),
+                        scalem(1, 1, 1)
+                    );
                 } else {
                     modelMatrix = mat4();
                 }
@@ -609,10 +617,11 @@ function initModelBuffers(gl, model) {
             verts.push(vtx[0], vtx[1], vtx[2], 1.0);
             colors.push(c[0], c[1], c[2], c[3]);
             normals.push(normal[0], normal[1], normal[2]);
-            if (model.textured && face.faceTexs && face.faceTexs[i])
-                uvs.push(face.faceTexs[i][0], face.faceTexs[i][1]);
+            if (model.textured && face.faceTexCoords && face.faceTexCoords[i])
+                uvs.push(face.faceTexCoords[i][0], face.faceTexCoords[i][1]);
             else
                 uvs.push(0.0, 0.0);
+
             for (let j = 0; j < 3; j++) {
                 min[j] = Math.min(min[j], vtx[j]);
                 max[j] = Math.max(max[j], vtx[j]);
@@ -645,6 +654,9 @@ function initModelBuffers(gl, model) {
         model.texture = gl.createTexture();
         let img = new Image();
         img.onload = () => {
+            console.log("Dog texture loaded:", model.imagePath);
+            console.log("Dog UVs sample:", uvs.slice(0, 10)); // should NOT be all zeros
+
             gl.bindTexture(gl.TEXTURE_2D, model.texture);
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);

@@ -154,7 +154,7 @@ class Model {
             } 
             else if (line.startsWith("vt")) {       // Vertex UV definition (texture coordinate)
                 let coords = line.match(/[+-]?([0-9]+[.])?[0-9]+/g);
-                uvs.push(vec2(coords[0], 1.0 - coords[1]))
+                uvs.push(vec2(coords[0], coords[1]))
             }
             else if (line.charAt(0) === 'v') {      // Vertex position definition
                 let coords = line.match(/[+-]?([0-9]+[.])?[0-9]+/g);
@@ -169,9 +169,6 @@ class Model {
         }
         
         this.objParsed = true;
-
-        console.log("Faces:");
-        console.log(this.faces);
     }
 
 

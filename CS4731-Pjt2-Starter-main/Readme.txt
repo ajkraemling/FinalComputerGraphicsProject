@@ -14,7 +14,7 @@ WASD - move
 SPACE - jump
 CLICK + DRAG - Look around
 CLICK - Swing sword
-QE - Make character look left and right
+QE - Make character look left and right, then rotate 
 ????? - Toggle shadows
 ????? - Toggles diffuse and specular components on and off
 JK - subdivies yellow square
