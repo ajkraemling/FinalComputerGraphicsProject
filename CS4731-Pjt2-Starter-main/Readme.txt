@@ -17,6 +17,7 @@ CLICK - Swing sword
 QE - Make character look left and right
 ????? - Toggle shadows
 ????? - Toggles diffuse and specular components on and off
+JK - subdivies yellow square
 
 We met the criteria for this project by adding:
 1. Complex shapes (hollow knight character, floor, and buildings)
