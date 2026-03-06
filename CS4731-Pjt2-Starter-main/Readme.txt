@@ -24,7 +24,7 @@ We met the criteria for this project by adding:
 2. Model transformations by running and jumping, as well as rotating with mouse
 3. Point light with phong shading from door
 4. Spot light from lamp
-5. Hollow knight is textured, default texture is gray
+5. Dog is textured, with a default texture
 6. Camera moves with hollow knight and rotates with mouse click and drag
 7. Hollow knight moves as the parent, head moves with body as child, sword moves with head rotation
 8. Shadow from ???????????
@@ -34,8 +34,8 @@ We met the criteria for this project by adding:
 12.
   a - animation controlled by WASDQE and mouse
   b - ?????? Toggles shadows
-  c - Toggles spot light 
-  d - Control camera movement with keyboard
+  c - ?????? Toggles spot light 
+  d - Control camera movement with keyboard or mouse
 
 
 We faced a lot of challenges importing models and textures, particularly getting the textures to work from Maya. We also faced some difficulties with certain models being too complex and crashing the site.
