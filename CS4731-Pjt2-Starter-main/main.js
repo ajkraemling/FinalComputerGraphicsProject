@@ -28,13 +28,13 @@ function main() {
     );
     let dirtmouthBuildings = new Model("data/dirtmouth_buildings_blend.obj", "data/dirtmouth_buildings_blend.mtl");
 
-    // include all models; body/head/sword move together but are drawn separately
+    // include all models for collision checks
     let models = [lamp, car, street, body, head, sword, dirtmouthBuildings];
 
     // CHARACTER STATE (hierarchical knight)
     let characterPos   = vec3(0.0, 0.0, 0.0);
-    let bodyAngle      = 0.0;           // rotation of the torso/body
-    let headTilt       = 0.0;           // relative yaw tilt of the head
+    let bodyAngle      = 0.0;           
+    let headTilt       = 0.0;           
     let characterVelY  = 0.0;
     let characterOnGround = false;       // usually part of body
     let swordPointing  = false;         // true while left button held down
@@ -55,9 +55,9 @@ function main() {
     window.addEventListener('keyup',   e => keys[e.key] = false);
 
     // CAMERA CONTROLS
-    let cameraAzimuth = 180.0;  // Horizontal rotation around character (in degrees) - start behind character
-    let cameraElevation = 30.96; // Vertical angle (in degrees) - matches original y=3.0 at correct distance
-    let cameraDistance = Math.sqrt(34); // Distance from character - matches original sqrt(0+9+25)
+    let cameraAzimuth = 180.0;  // Horizontal rotation around character (in degrees) 
+    let cameraElevation = 30.96; // Vertical angle (in degrees)
+    let cameraDistance = Math.sqrt(34); // Distance from character 
     let isPointerLocked = false;
     let pointerLockInfo = document.getElementById('pointerLockInfo');
 
@@ -159,10 +159,10 @@ function main() {
         if (!sword._initialized) return mat4();
         let m = buildBodyMatrix();
         if (swordPointing) {
-            // orient the sword away from the body with rotations reversed
-            m = mult(m, rotateZ(90));    // reversed sign
-            m = mult(m, rotateY(90));    // reversed sign
-            m = mult(m, rotateY(-headTilt)); // respect inverted head tilt
+            // orient the sword away from the body with rotations reversed (FIX THIS)
+            m = mult(m, rotateZ(90));   
+            m = mult(m, rotateY(90));    
+            m = mult(m, rotateY(-headTilt)); // depending on head tilt, sword should point in the direction the head is facing
         }
         // size
         m = mult(m, scalem(1.0, 1.0, 1.0));
@@ -170,7 +170,7 @@ function main() {
     }
 
     function updateCharacter() {
-        // handle turning/tilting (signs reversed)
+        // handle turning head
         if (keys['q']) {
             if (headTilt > -HEAD_TILT_LIMIT) {
                 headTilt -= HEAD_TILT_SPEED;        // tilt right when Q
