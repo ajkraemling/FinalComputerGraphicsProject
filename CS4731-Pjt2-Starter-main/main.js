@@ -58,7 +58,7 @@ function main() {
     canvas.addEventListener('mousemove', e => {
         if (!mouseDown) return;
         let dx = e.clientX - lastMouseX;
-        characterAngle -= dx * MOUSE_SENSITIVITY;
+        bodyAngle -= dx * MOUSE_SENSITIVITY;
         lastMouseX = e.clientX;
     });
 
@@ -361,7 +361,7 @@ function main() {
 
     // CHARACTER HELPERS 
     function buildBodyMatrix() {
-        if (!character._initialized) return mat4();
+        if (!body._initialized) return mat4();
         let m = mat4();
         m = mult(translate(characterPos[0], characterPos[1] + CHARACTER_Y_OFFSET, characterPos[2]), m);
         m = mult(m, rotateY(bodyAngle));
@@ -505,7 +505,7 @@ function main() {
         updateCharacter();
 
         // Follow camera
-        let rad = characterAngle * Math.PI / 180.0;
+        let rad = bodyAngle * Math.PI / 180.0;
         let camOffset = vec3(-Math.sin(rad) * 10.0, 4.5, -Math.cos(rad) * 10.0);
         let eye = add(characterPos, camOffset);
         let at = add(characterPos, vec3(0, 1, 0));
