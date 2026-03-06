@@ -117,7 +117,7 @@ function main() {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         skyTextureReady = true;
     };
-    skyImage.src = "data/skybox.avif";
+    skyImage.src = "data/skybox.jpg";
 
     // Draw the skybox first
     // Depth writing is disabled so it doesnt ooclude
