@@ -17,7 +17,7 @@ function main() {
     gl.useProgram(program);
 
     // MODELS
-    let lamp = new Model("data/lamp.obj", "data/lamp.mtl");
+    let lamp = new Model("data/street_light.obj", "data/street_light.mtl");
     let body = new Model("data/knight_body.obj",  "data/knight_body.mtl");
     let head = new Model("data/knight_head.obj",  "data/knight_head.mtl");
     let sword = new Model("data/knight_sword.obj", "data/knight_sword.mtl");
@@ -567,6 +567,11 @@ function main() {
                     modelMatrix = mult(
                         translate(3.0, 1.5, 0.0),
                         scalem(1, 1, 1)
+                    );
+                } else if (m === lamp) {
+                    modelMatrix = mult(
+                        translate(0.0, 0.5, 0.0),
+                        scalem(0.1, 0.1, 0.1)
                     );
                 } else {
                     modelMatrix = mat4();
