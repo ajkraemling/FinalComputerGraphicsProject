@@ -1,6 +1,7 @@
 # Blender 4.2.9 LTS MTL File: 'dirtmouth_floor.blend'
 # www.blender.org
 
+# all buildings color
 newmtl aiStandardSurface3SG
 Ns 0.000000
 Ka 1.000000 1.000000 1.000000
@@ -11,6 +12,7 @@ Ni 1.500000
 d 1.000000
 illum 1
 
+# buildings black color
 newmtl aiStandardSurface4SG
 Ns 0.000000
 Ka 1.000000 1.000000 1.000000
@@ -21,6 +23,7 @@ Ni 1.500000
 d 1.000000
 illum 1
 
+# glass
 newmtl aiStandardSurface5SG
 Ns 0.000000
 Ka 1.000000 1.000000 1.000000
@@ -31,6 +34,7 @@ Ni 1.500000
 d 0.735233
 illum 1
 
+# building 2 light/door
 newmtl initialShadingGroup
 Ns 0.000000
 Ka 1.000000 1.000000 1.000000
@@ -38,9 +42,10 @@ Kd 0.813333 1.000000 0.772065
 Ks 0.000000 0.000000 0.000000
 Ke 0.714413 7.800000 6.343072
 Ni 1.500000
-d 1.000000
+d 0.75
 illum 1
 
+#building 2 design
 newmtl standardSurface2SG
 Ns 0.000000
 Ka 1.000000 1.000000 1.000000
@@ -51,6 +56,7 @@ Ni 1.500000
 d 1.000000
 illum 1
 
+# building windows borders
 newmtl standardSurface7SG
 Ns 0.000000
 Ka 1.000000 1.000000 1.000000
@@ -61,6 +67,7 @@ Ni 1.500000
 d 1.000000
 illum 1
 
+#building windows
 newmtl standardSurface9SG
 Ns 0.000000
 Ka 1.000000 1.000000 1.000000
@@ -68,5 +75,5 @@ Kd 0.187734 0.437162 0.470642
 Ks 0.000000 0.000000 0.000000
 Ke 0.071025 1.118315 1.331420
 Ni 1.500000
-d 1.000000
+d 0.5
 illum 1

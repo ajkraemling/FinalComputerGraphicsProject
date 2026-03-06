@@ -74,24 +74,36 @@ class Model {
         // Split and sanitize MTL file input
         let mtlLines = this.splitAndSanitizeFile(mtlFile);
 
-        // Create mapping of material name to diffuse / specular colors
+        // Create mapping of material name to diffuse / specular colors / opacity
         this.diffuseMap = new Map();
         this.specularMap = new Map();
         let currMaterial = null;
+        let materialOpacity = new Map();  // Map to store opacity values temporarily
+        let materialDiffuse = new Map();  // Map to store diffuse values temporarily
 
         for (let currLine = 0; currLine < mtlLines.length; currLine++) {
             let line = mtlLines[currLine];
 
             if (line.startsWith("newmtl")) {        // Hit a new material
                 currMaterial = line.substring(line.indexOf(' ') + 1);   // See [4]
+                // Initialize default opacity for new material
+                materialOpacity.set(currMaterial, 1.0);
             }
             else if (line.startsWith("Kd")) {       // Material diffuse definition
                 let values = line.match(/[+-]?([0-9]+[.])?[0-9]+/g);
-                this.diffuseMap.set(currMaterial, [parseFloat(values[0]), parseFloat(values[1]), parseFloat(values[2]), 1.0]);
+                materialDiffuse.set(currMaterial, [parseFloat(values[0]), parseFloat(values[1]), parseFloat(values[2])]);
             }
             else if (line.startsWith("Ks")) {       // Material specular definition
                 let values = line.match(/[+-]?([0-9]+[.])?[0-9]+/g);
                 this.specularMap.set(currMaterial, [parseFloat(values[0]), parseFloat(values[1]), parseFloat(values[2]), 1.0]);
+            }
+            else if (line.startsWith("d ")) {       // Material opacity (dissolve) definition
+                let values = line.match(/[+-]?([0-9]+[.])?[0-9]+/g);
+                materialOpacity.set(currMaterial, parseFloat(values[0]));
+            }
+            else if (line.startsWith("Tr ")) {      // Transparency (1 - dissolve)
+                let values = line.match(/[+-]?([0-9]+[.])?[0-9]+/g);
+                materialOpacity.set(currMaterial, 1.0 - parseFloat(values[0]));
             }
             else if (line.startsWith("map_Kd")) {   // Texture file
 
@@ -103,6 +115,12 @@ class Model {
                 this.textured = true;
             }
         }
+
+        // Combine diffuse and opacity values
+        materialDiffuse.forEach((color, material) => {
+            let opacity = materialOpacity.get(material) || 1.0;
+            this.diffuseMap.set(material, [color[0], color[1], color[2], opacity]);
+        });
 
         this.mtlParsed = true;
 

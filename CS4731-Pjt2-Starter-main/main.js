@@ -8,6 +8,8 @@ function main() {
 
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     let program = initShaders(gl, "vshader", "fshader");
     resizeCanvasToDisplaySize(gl.canvas);
@@ -18,8 +20,8 @@ function main() {
     let lamp = new Model("data/lamp.obj", "data/lamp.mtl");
     let character = new Model("data/hollow_knight.obj","data/hollow_knight.mtl");
     let street = new Model("data/mini_tiles.obj","data/mini_tiles.mtl");
-
-    let models = [lamp, street, character];
+    let dirtmouthBuildings = new Model("data/dirtmouth_buildings_blend.obj", "data/dirtmouth_buildings_blend.mtl");
+    let models = [lamp, street, character, dirtmouthBuildings];
 
     // CHARACTER STATE
     let characterPos = vec3(0.0, 0.0, 0.0);
@@ -348,7 +350,8 @@ function main() {
         let m = mat4();
         m = mult(translate(characterPos[0], characterPos[1] + CHARACTER_Y_OFFSET, characterPos[2]), m);
         m = mult(m, rotateY(characterAngle));
-        m = mult(m, scalem(0.5, 0.5, 0.5));
+        m = mult(m, scalem(0.3, 0.3, 0.3))
+
         return m;
     }
 
