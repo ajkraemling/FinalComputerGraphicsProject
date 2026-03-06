@@ -146,20 +146,18 @@ function main() {
     function buildHeadMatrix() {
         if (!head._initialized) return mat4();
         let m = buildBodyMatrix();
-        // position head slightly higher than before
-        m = mult(m, translate(0, 1.0, 0));
+        // position 
+        m = mult(m, translate(0, 0, 0));
         // rotate
         m = mult(m, rotateY(-headTilt));
         // size
-        m = mult(m, scalem(0.7, 0.7, 0.7));
+        m = mult(m, scalem(1.0, 1.0, 1.0));
         return m;
     }
 
     function buildSwordMatrix() {
         if (!sword._initialized) return mat4();
         let m = buildBodyMatrix();
-        // attach behind body and raise slightly
-        m = mult(m, translate(0, 0.2, -1.0));
         if (swordPointing) {
             // orient the sword away from the body with rotations reversed
             m = mult(m, rotateZ(90));    // reversed sign
@@ -167,7 +165,7 @@ function main() {
             m = mult(m, rotateY(-headTilt)); // respect inverted head tilt
         }
         // size
-        m = mult(m, scalem(0.8, 0.8, 0.8));
+        m = mult(m, scalem(1.0, 1.0, 1.0));
         return m;
     }
 
@@ -257,7 +255,7 @@ function main() {
         
         let camOffset = vec3(camX, camY, camZ);
         let eye       = add(characterPos, camOffset);
-        let at        = add(characterPos, vec3(0, 1, 0));
+        let at        = add(characterPos, vec3(0, 1.5, 0));
         view          = lookAt(eye, at, vec3(0, 1, 0));
 
         models.forEach(m => {
