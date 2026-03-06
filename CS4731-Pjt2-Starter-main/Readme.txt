@@ -7,7 +7,7 @@ Open localhost:3000, select CS4731-Pjt2-Starter-main
 Enjoy!
 
 Alternatively, use the link below:
-
+https://ajkraemling.github.io/FinalComputerGraphicsProject/
 
 As a part of this project, you can:
 WASD - move
