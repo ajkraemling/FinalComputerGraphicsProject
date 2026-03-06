@@ -48,26 +48,48 @@ function main() {
     window.addEventListener('keydown', e => keys[e.key] = true);
     window.addEventListener('keyup', e => keys[e.key] = false);
 
-    let mouseDown = false;
-    let lastMouseX = 0;
-    const MOUSE_SENSITIVITY = 0.3;
+    // CAMERA CONTROLS (pointer lock)
+    let cameraAzimuth = 180.0;      // horizontal rotation around character (degrees)
+    let cameraElevation = 20.0;     // vertical angle (degrees)
+    let cameraDistance = Math.sqrt(34); // distance from character
+    let isPointerLocked = false;
+    let pointerLockInfo = document.getElementById('pointerLockInfo');
 
-    canvas.addEventListener('mousedown', e => {
-        mouseDown = true;
-        lastMouseX = e.clientX;
-    });
-    canvas.addEventListener('mouseup', () => mouseDown = false);
-    canvas.addEventListener('mouseleave', () => mouseDown = false);
-    canvas.addEventListener('mousemove', e => {
-        if (!mouseDown) return;
-        let dx = e.clientX - lastMouseX;
-        bodyAngle -= dx * MOUSE_SENSITIVITY;
-        lastMouseX = e.clientX;
+    // Request pointer lock on canvas click
+    canvas.addEventListener('click', () => {
+        canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock;
+        canvas.requestPointerLock();
     });
 
-    let view = lookAt(vec3(0, 3, 7), vec3(0, 0, 0), vec3(0, 1, 0));
-    let proj = perspective(45, canvas.width / canvas.height, 0.1, 1000.0);
-    let mvp = mult(proj, view);
+    // Pan camera with locked mouse movement
+    canvas.addEventListener('mousemove', (e) => {
+        if (!isPointerLocked) return;
+        let sensitivity = 0.75;
+        cameraAzimuth   += e.movementX * sensitivity;
+        cameraElevation += e.movementY * sensitivity;
+        // clamp elevation to prevent flipping
+        cameraElevation = Math.max(-80, Math.min(80, cameraElevation));
+        e.preventDefault();
+    });
+
+    // Track pointer lock state
+    document.addEventListener('pointerlockchange', () => {
+        isPointerLocked = (document.pointerLockElement === canvas ||
+                           document.mozPointerLockElement === canvas);
+        if (pointerLockInfo) {
+            pointerLockInfo.classList.toggle('locked', isPointerLocked);
+        }
+    });
+    document.addEventListener('mozpointerlockchange', () => {
+        isPointerLocked = (document.pointerLockElement === canvas ||
+                           document.mozPointerLockElement === canvas);
+        if (pointerLockInfo) {
+            pointerLockInfo.classList.toggle('locked', isPointerLocked);
+        }
+    });
+
+    // Prevent context menu on right click
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
     // sword-pointing toggle on left click
     canvas.addEventListener('mousedown', (e) => {
@@ -76,6 +98,10 @@ function main() {
     canvas.addEventListener('mouseup', (e) => {
         if (e.button === 0) swordPointing = false;
     });
+
+    let view = lookAt(vec3(0, 3, 7), vec3(0, 0, 0), vec3(0, 1, 0));
+    let proj = perspective(45, canvas.width / canvas.height, 0.1, 1000.0);
+    let mvp = mult(proj, view);
 
     const vPositionLoc = gl.getAttribLocation(program, "vPosition");
     const vNormalLoc = gl.getAttribLocation(program, "vNormal");
@@ -98,7 +124,6 @@ function main() {
     let lightDirEye = vec3(lightDirEye4[0], lightDirEye4[1], lightDirEye4[2]);
     let uLightDirLoc = gl.getUniformLocation(program, "uLightDirection");
     gl.uniform3fv(uLightDirLoc, flatten(normalize(lightDirEye)));
-    
 
     gl.uniform3fv(gl.getUniformLocation(program, "uLightDirection"), flatten(vec3(3.0, 1.0, 1.0)));
     gl.uniform4fv(gl.getUniformLocation(program, "uLightColor"), flatten([1, 1, 1, 1]));
@@ -324,7 +349,7 @@ function main() {
     skyImage.src = "data/skybox.jpg";
 
     // Draw the skybox first
-    // Depth writing is disabled so it doesnt ooclude
+    // Depth writing is disabled so it doesnt occlude
     function drawSkybox(view, proj) {
         if (!skyTextureReady) return;
 
@@ -389,10 +414,12 @@ function main() {
         if (!sword._initialized) return mat4();
         let m = buildBodyMatrix();
         if (swordPointing) {
-            // orient the sword away from the body with rotations reversed (FIX THIS)
-            m = mult(m, rotateZ(90));   
-            m = mult(m, rotateY(90));    
-            m = mult(m, rotateY(-headTilt)); // depending on head tilt, sword should point in the direction the head is facing
+            // orient the sword away from the body with rotations reversed (FIX THIS PLUH)
+            m = mult(m, rotateZ(180));  
+            m = mult(m, translate(0, -4.5, 0)); 
+            m = mult(m, rotateY(-90))    
+            m = mult(m, translate(2.0, 0, 0));
+            m = mult(m, rotateY(headTilt)); // depending on head tilt, sword should point in the direction the head is facing
         }
         // size
         m = mult(m, scalem(1.0, 1.0, 1.0));
@@ -507,11 +534,16 @@ function main() {
 
         updateCharacter();
 
-        // Follow camera
-        let rad = bodyAngle * Math.PI / 180.0;
-        let camOffset = vec3(-Math.sin(rad) * 10.0, 4.5, -Math.cos(rad) * 10.0);
-        let eye = add(characterPos, camOffset);
-        let at = add(characterPos, vec3(0, 1, 0));
+        // Follow camera with pointer lock mouse controls
+        let azimuthRad   = (bodyAngle + cameraAzimuth) * Math.PI / 180.0;
+        let elevationRad = cameraElevation * Math.PI / 180.0;
+
+        let camX = cameraDistance * Math.sin(azimuthRad) * Math.cos(elevationRad);
+        let camY = cameraDistance * Math.sin(elevationRad);
+        let camZ = cameraDistance * Math.cos(azimuthRad) * Math.cos(elevationRad);
+
+        let eye = add(characterPos, vec3(camX, camY, camZ));
+        let at  = add(characterPos, vec3(0, 1.5, 0));
         view = lookAt(eye, at, vec3(0, 1, 0));
 
         drawSkybox(view, proj);
@@ -531,7 +563,7 @@ function main() {
                     modelMatrix = buildHeadMatrix();
                 } else if (m === sword) {
                     modelMatrix = buildSwordMatrix();
-                }else if (m === dog) {
+                } else if (m === dog) {
                     modelMatrix = mult(
                         translate(3.0, 1.5, 0.0),
                         scalem(1, 1, 1)
@@ -655,7 +687,7 @@ function initModelBuffers(gl, model) {
         let img = new Image();
         img.onload = () => {
             console.log("Dog texture loaded:", model.imagePath);
-            console.log("Dog UVs sample:", uvs.slice(0, 10)); // should NOT be all zeros
+            console.log("Dog UVs sample:", uvs.slice(0, 10));
 
             gl.bindTexture(gl.TEXTURE_2D, model.texture);
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
