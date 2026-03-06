@@ -18,25 +18,37 @@ function main() {
     // MODELS
     let lamp     = new Model("data/lamp.obj",      "data/lamp.mtl");
     let car      = new Model("data/car.obj",       "data/car.mtl");
-    let character= new Model("data/hollow_knight.obj",       "data/hollow_knight.mtl");
+    // hierarchical knight parts: body is parent, head child, sword grandchild
+    let body     = new Model("data/knight_body.obj",  "data/knight_body.mtl");
+    let head     = new Model("data/knight_head.obj",  "data/knight_head.mtl");
+    let sword    = new Model("data/knight_sword.obj", "data/knight_sword.mtl");
     let street   = new Model(
         "data/mini_tiles.obj",
         "data/mini_tiles.mtl"
     );
     let dirtmouthBuildings = new Model("data/dirtmouth_buildings_blend.obj", "data/dirtmouth_buildings_blend.mtl");
 
-    let models = [lamp, car, street, character, dirtmouthBuildings];
+    // include all models; body/head/sword move together but are drawn separately
+    let models = [lamp, car, street, body, head, sword, dirtmouthBuildings];
 
-    // CHARACTER STATE
+    // CHARACTER STATE (hierarchical knight)
     let characterPos   = vec3(0.0, 0.0, 0.0);
-    let characterAngle = 0.0;
+    let bodyAngle      = 0.0;           // rotation of the torso/body
+    let headTilt       = 0.0;           // relative yaw tilt of the head
     let characterVelY  = 0.0;
-    let characterOnGround = false;                // <-- fixed name
+    let characterOnGround = false;       // usually part of body
+    let swordPointing  = false;         // true while left button held down
+
     const CHARACTER_SPEED      = 0.05;
-    const CHARACTER_TURN_SPEED = 2.0;
+    const CHARACTER_TURN_SPEED = 1.0;
     const CHARACTER_Y_OFFSET = 1.0;
     const GRAVITY    = -0.005;
-    const JUMP_FORCE =  0.15;                     // <-- fixed name
+    const JUMP_FORCE =  0.15;           // vertical jump
+
+    // head tilt parameters
+    const HEAD_TILT_SPEED = 5.0;        // degrees per frame when Q/E held
+    const HEAD_TILT_LIMIT = 30.0;       // max tilt left/right
+
 
     const keys = {};
     window.addEventListener('keydown', e => keys[e.key] = true);
@@ -95,6 +107,14 @@ function main() {
         e.preventDefault();
     });
 
+    // sword-pointing toggle on left click
+    canvas.addEventListener('mousedown', (e) => {
+        if (e.button === 0) swordPointing = true;
+    });
+    canvas.addEventListener('mouseup', (e) => {
+        if (e.button === 0) swordPointing = false;
+    });
+
     const vPositionLoc = gl.getAttribLocation(program, "vPosition");
     const vNormalLoc   = gl.getAttribLocation(program, "vNormal");
     const vColorLoc    = gl.getAttribLocation(program, "vColor");
@@ -112,22 +132,66 @@ function main() {
 
     const modelMatrices = new Map();
 
-    // change character size, location, and orientation
-    function buildCharacterMatrix() {
-        if (!character._initialized) return mat4();
+    // change character size, location, and orientation (body only)
+    function buildBodyMatrix() {
+        if (!body._initialized) return mat4();
         let m = mat4();
         m = mult(translate(characterPos[0], characterPos[1] + CHARACTER_Y_OFFSET, characterPos[2]), m);
-        m = mult(m, rotateY(characterAngle));
-        m = mult(m, scalem(0.3, 0.3, 0.3))
+        m = mult(m, rotateY(bodyAngle));
+        m = mult(m, scalem(0.3, 0.3, 0.3));
+        return m;
+    }
 
+    // head matrix
+    function buildHeadMatrix() {
+        if (!head._initialized) return mat4();
+        let m = buildBodyMatrix();
+        // position head slightly higher than before
+        m = mult(m, translate(0, 1.0, 0));
+        // rotate
+        m = mult(m, rotateY(-headTilt));
+        // size
+        m = mult(m, scalem(0.7, 0.7, 0.7));
+        return m;
+    }
+
+    function buildSwordMatrix() {
+        if (!sword._initialized) return mat4();
+        let m = buildBodyMatrix();
+        // attach behind body and raise slightly
+        m = mult(m, translate(0, 0.2, -1.0));
+        if (swordPointing) {
+            // orient the sword away from the body with rotations reversed
+            m = mult(m, rotateZ(90));    // reversed sign
+            m = mult(m, rotateY(90));    // reversed sign
+            m = mult(m, rotateY(-headTilt)); // respect inverted head tilt
+        }
+        // size
+        m = mult(m, scalem(0.8, 0.8, 0.8));
         return m;
     }
 
     function updateCharacter() {
-        if (keys['q']) characterAngle += CHARACTER_TURN_SPEED;
-        if (keys['e']) characterAngle -= CHARACTER_TURN_SPEED;
+        // handle turning/tilting (signs reversed)
+        if (keys['q']) {
+            if (headTilt > -HEAD_TILT_LIMIT) {
+                headTilt -= HEAD_TILT_SPEED;        // tilt right when Q
+            } else {
+                bodyAngle += CHARACTER_TURN_SPEED;
+            }
+        } else if (keys['e']) {
+            if (headTilt < HEAD_TILT_LIMIT) {
+                headTilt += HEAD_TILT_SPEED;            // tilt left when E
+            } else {
+                bodyAngle -= CHARACTER_TURN_SPEED;
+            }
+        } else {
+            // return head to center
+            if (headTilt > 0) headTilt = Math.max(0, headTilt - HEAD_TILT_SPEED);
+            if (headTilt < 0) headTilt = Math.min(0, headTilt + HEAD_TILT_SPEED);
+        }
 
-        let rad     = characterAngle * Math.PI / 180.0;
+        let rad     = bodyAngle * Math.PI / 180.0;
         let forward = vec3( Math.sin(rad), 0,  Math.cos(rad));
         let right   = vec3( Math.cos(rad), 0, -Math.sin(rad));
 
@@ -145,15 +209,16 @@ function main() {
         characterPos[1] += characterVelY;
         characterOnGround = false;
 
-        if (!character._initialized || !character.bbox) return;
+        if (!body._initialized || !body.bbox) return;
 
-        let charBox      = getWorldBBox(character, buildCharacterMatrix());
+        let charBox      = getWorldBBox(body, buildBodyMatrix());
         let feetY        = charBox.min[1];
         let centerX      = (charBox.min[0] + charBox.max[0]) / 2;
         let centerZ      = (charBox.min[2] + charBox.max[2]) / 2;
 
         models.forEach(m => {
-            if (m === character || !m._initialized || !m.bbox) return;
+            // ignore own parts for collision
+            if (m === body || m === head || m === sword || !m._initialized || !m.bbox) return;
             let mMatrix = modelMatrices.get(m);
             if (!mMatrix) return;
 
@@ -183,7 +248,7 @@ function main() {
         updateCharacter();
 
         // Follow camera with mouse controls
-        let azimuthRad = (characterAngle + cameraAzimuth) * Math.PI / 180.0;
+        let azimuthRad = (bodyAngle + cameraAzimuth) * Math.PI / 180.0;
         let elevationRad = cameraElevation * Math.PI / 180.0;
         
         let camX = cameraDistance * Math.sin(azimuthRad) * Math.cos(elevationRad);
@@ -203,9 +268,16 @@ function main() {
                 }
 
                 // Build model matrix
-                let modelMatrix = (m === character)
-                    ? buildCharacterMatrix()
-                    : mat4();
+                let modelMatrix;
+                if (m === body) {
+                    modelMatrix = buildBodyMatrix();
+                } else if (m === head) {
+                    modelMatrix = buildHeadMatrix();
+                } else if (m === sword) {
+                    modelMatrix = buildSwordMatrix();
+                } else {
+                    modelMatrix = mat4();
+                }
 
                 modelMatrices.set(m, modelMatrix);
 
