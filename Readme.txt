@@ -15,7 +15,7 @@ SPACE - jump
 CLICK + DRAG - Look around
 CLICK - Swing sword
 QE - Make character look left and right, then rotate 
-????? - Toggle shadows
+X - Toggle shadows
 L - Toggles off diffuse, then toggles off specular, then both, then turns off the light
 JK - subdivies yellow square
 
@@ -33,7 +33,7 @@ We met the criteria for this project by adding:
 11. Skybox
 12.
   a - animation controlled by WASDQE and mouse
-  b - ?????? Toggles shadows
+  b - X Toggles shadows
   c - L Toggles spot light 
   d - Control camera movement with keyboard or mouse
 
@@ -46,11 +46,10 @@ Alexander Kraemling
 - Skybox
 - Initial keyboard/ movement controls, jumping
 
-<<<<<<< HEAD
 Cameron
--  Lighting(Reflection/refraction/Shading/Shadows) 
-=======
-
+-  Reflection
+- Refraction
+- Shading/Shadows 
 
 Avikshit Pal
 - Fixed models for site
