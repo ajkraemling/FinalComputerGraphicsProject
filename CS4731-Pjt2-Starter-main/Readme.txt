@@ -23,7 +23,7 @@ We met the criteria for this project by adding:
 2. Model transformations by running and jumping, as well as rotating with mouse
 3. Point light with phong shading from door
 4. Spot light from lamp
-5. Hollow knight is textured, default texture is gray
+5. Dog is textured, and all models have colors
 6. Camera moves with hollow knight and rotates with mouse click and drag
 7. Hollow knight moves as the parent, head moves with body as child, sword moves with head rotation
 8. Shadow from ???????????
@@ -49,7 +49,11 @@ Cameron
 - 
 
 Avi 
-- 
+- Created the knight from Hollow Knight and the lamp, floor tiles and buildings from Dirtmouth
+- Added the mouse lock camera to pan around the knight
+- Created hierarchical model for the knight with 2 levels (parent - body, child - head, grandchild - sword)
+- Added/updated animations and action keys for the hierarchical model (head tilts, sword drawn)
+- Added cube with multiple levels of subdivision
 
 Extra Credit
 Our jumping decelerates the character after setting an initial upward jump force
