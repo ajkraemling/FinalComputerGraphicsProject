@@ -48,11 +48,9 @@ Alexander Kraemling
 
 <<<<<<< HEAD
 Cameron
--  Lighting(Relfection/refraction/Shading/Shadows) 
+-  Lighting(Reflection/refraction/Shading/Shadows) 
 =======
-Cameron Gleaton
-- 
->>>>>>> 44defeb924f325ac2ffc3b644351055d63f7c02e
+
 
 Avikshit Pal
 - Fixed models for site
