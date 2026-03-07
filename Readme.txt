@@ -46,11 +46,18 @@ Alexander Kraemling
 - Skybox
 - Initial keyboard/ movement controls, jumping
 
+<<<<<<< HEAD
 Cameron
 -  Lighting(Relfection/refraction/Shading/Shadows) 
-
-Avi 
+=======
+Cameron Gleaton
 - 
+>>>>>>> 44defeb924f325ac2ffc3b644351055d63f7c02e
+
+Avikshit Pal
+- Fixed models for site
+- Hierarchical model of body, head, sword
+- Mouse controls for character rotation
 
 Extra Credit
 JK to subdivide sphere!
