@@ -1,7 +1,27 @@
 // EXTRA CREDIT
 // Our jumping decelerates the character after setting an initial upward jump force
 // Our character collides with the floor and the top of objects, preventing him from falling infinitely
+//let bulbpos = vec3(0.0,5.0,0.0);
+//let shadowMatrix = mat4();
+function lampPos(model) {
+    let bbox = model.bbox;
+    return vec3(
+        (bbox.min[0] + bbox.max[0]) / 2,
+        bbox.max[1],
+        (bbox.min[2] + bbox.max[2]) / 2
+    );
+}
+
+function makeShadow(pos) {
+    let temp = mat4();
+    temp[3][3] = 0;
+    temp[3][1] = -1.0 / pos[1];
+    let shadow = mult(translate(pos[0],pos[1],pos[2]),mult(temp,translate(-pos[0],-pos[1],-pos[2])));
+    return shadow;
+}
 function main() {
+    let bulbpos = vec3(0.0,5.0,0.0);
+    let shadowMatrix = mat4();
     let canvas = document.getElementById('webgl');
     let gl = WebGLUtils.setupWebGL(canvas, undefined);
     if (!gl) { console.log('Failed to get the rendering context for WebGL'); return; }
@@ -22,6 +42,7 @@ function main() {
     let head = new Model("data/knight_head.obj",  "data/knight_head.mtl");
     let sword = new Model("data/knight_sword.obj", "data/knight_sword.mtl");
     let dog = new Model("data/dog.obj", "data/dog.mtl");
+    lamp.isLamp = true;
     dog.textured = true;
     dog.imagePath = "data/dogtexture.png";
     let street = new Model("data/mini_tiles.obj","data/mini_tiles.mtl");
@@ -30,8 +51,8 @@ function main() {
 
     // CHARACTER STATE
     let characterPos = vec3(0.0, 0.0, 0.0);
-    let bodyAngle = 0.0;           
-    let headTilt = 0.0; 
+    let bodyAngle = 0.0;
+    let headTilt = 0.0;
     let characterVelY = 0.0;
     let characterOnGround = false;
     const CHARACTER_SPEED = 0.15;
@@ -87,18 +108,34 @@ function main() {
     const uSkyboxMVPLoc = gl.getUniformLocation(program, "uSkyboxMVP");
     const uSkySamplerLoc = gl.getUniformLocation(program, "uSkySampler");
     const isSkyboxLoc = gl.getUniformLocation(program, "isSkybox");
+    const uNormalMatLoc  = gl.getUniformLocation(program, "uNormalMatrix");
+    const uShadowMatLoc  = gl.getUniformLocation(program, "shadowMatrix");
+    const uShadowPassLoc = gl.getUniformLocation(program, "uShadowPass");
+    const uModelLoc = gl.getUniformLocation(program, "uModel");
+
+
     const uMVLoc = gl.getUniformLocation(program, "uMV");
+
     gl.uniformMatrix4fv(uMVLoc, false, flatten(view));
     gl.uniformMatrix4fv(uMVPLoc, false, flatten(mvp));
 
     // set lighting uniforms 
     let lightDirWorld = vec3(3.0, 1.0, 1.0);
     // transform direction to eye-space
-    let lightDirEye4 = mult(view, vec4(lightDirWorld[0], lightDirWorld[1], lightDirWorld[2], 0.0));
+
+    gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(vec4(bulbpos, 1.0)));
+
+
+    gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(vec4(bulbpos, 1.0)));
+// let lightDirEye = vec3(lightDirEye4[0], lightDirEye4[1], lightDirEye4[2]); // This crashes!
+
+// CORRECT: Define lightDirEye4 first
+    let lightDirEye4 = mult(view, vec4(bulbpos, 1.0));
     let lightDirEye = vec3(lightDirEye4[0], lightDirEye4[1], lightDirEye4[2]);
+
     let uLightDirLoc = gl.getUniformLocation(program, "uLightDirection");
     gl.uniform3fv(uLightDirLoc, flatten(normalize(lightDirEye)));
-    
+
 
     gl.uniform3fv(gl.getUniformLocation(program, "uLightDirection"), flatten(vec3(3.0, 1.0, 1.0)));
     gl.uniform4fv(gl.getUniformLocation(program, "uLightColor"), flatten([1, 1, 1, 1]));
@@ -106,7 +143,7 @@ function main() {
 
     gl.uniform4fv(gl.getUniformLocation(program, "lightDiffuse"), flatten([1.5, 1.5, 1.5, 1]));
     gl.uniform4fv(gl.getUniformLocation(program, "lightSpecular"), flatten([1, 1, 1, 1]));
-    gl.uniform4fv(gl.getUniformLocation(program, "lightAmbient"), flatten([0.2, 0.2, 0.2, 1]));
+    gl.uniform4fv(gl.getUniformLocation(program, "lightAmbient"), flatten([0.4, 0.4, 0.4, 1]));
     // ambient defaults
     gl.uniform4fv(gl.getUniformLocation(program, "materialSpecular"), flatten([0.5, 0.5, 0.5, 1]));
     gl.uniform4fv(gl.getUniformLocation(program, "materialAmbient"), flatten([0.2, 0.2, 0.2, 1]));
@@ -171,7 +208,7 @@ function main() {
          nors.push(vec3(b[0],b[1], b[2]));
          nors.push(vec3(c[0],c[1], c[2]));
     }
-    
+
     function divideTriangle(a, b, c, count, pts, nors) {
         if ( count > 0 ) {
 
@@ -324,7 +361,7 @@ function main() {
     skyImage.src = "data/skybox.jpg";
 
     // Draw the skybox first
-    // Depth writing is disabled so it doesnt ooclude
+    // Depth writing is disabled so it doesn't include
     function drawSkybox(view, proj) {
         if (!skyTextureReady) return;
 
@@ -334,8 +371,6 @@ function main() {
             vec4(view[2][0], view[2][1], view[2][2], 0.0),
             vec4(0.0, 0.0, 0.0, 1.0)
         );
-
-        // Scale to be big
         let skyScale = scalem(50, 50, 50);
         let skyMVP = mult(proj, mult(rotOnlyView, skyScale));
         gl.uniformMatrix4fv(uSkyboxMVPLoc, false, flatten(skyMVP));
@@ -356,10 +391,9 @@ function main() {
         gl.disableVertexAttribArray(vColorLoc);
         gl.disableVertexAttribArray(vTexCoordLoc);
 
+        gl.uniform1i(uShadowPassLoc,0);
         gl.drawArrays(gl.TRIANGLES, 0, skybox.count);
 
-        gl.depthMask(true);
-        gl.uniform1i(isSkyboxLoc, 0);
     }
 
     // CHARACTER HELPERS 
@@ -390,8 +424,8 @@ function main() {
         let m = buildBodyMatrix();
         if (swordPointing) {
             // orient the sword away from the body with rotations reversed (FIX THIS)
-            m = mult(m, rotateZ(90));   
-            m = mult(m, rotateY(90));    
+            m = mult(m, rotateZ(90));
+            m = mult(m, rotateY(90));
             m = mult(m, rotateY(-headTilt)); // depending on head tilt, sword should point in the direction the head is facing
         }
         // size
@@ -472,13 +506,15 @@ function main() {
 
     function render() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
+        drawSkybox(view, proj);
+        gl.depthMask(true);
+        gl.uniform1i(isSkyboxLoc, 0);
         // Draw subdividable cube to the right of center
         if (cubePosBuffer && cubeNorBuffer && cubeColBuffer) {
             // model transform
             const model = mult(translate(2.0, 1.0, 0.0), rotate(45, 0, 1, 0), scalem(1.0, 1.0, 1.0));
-            const mvpModel = mult(mvp, model);         
-            const mvModel = mult(view, model);         
+            const mvpModel = mult(mvp, model);
+            const mvModel = mult(view, model);
 
             gl.uniformMatrix4fv(uMVPLoc, false, flatten(mvpModel));
             gl.uniformMatrix4fv(uMVLoc, false, flatten(mvModel));
@@ -500,7 +536,7 @@ function main() {
 
             gl.drawArrays(gl.TRIANGLES, 0, cubeNumVertices);
 
-            // restore global uMVP/uMV for the rest of the scene 
+            // restore global uMVP/uMV for the rest of the scene
             gl.uniformMatrix4fv(uMVPLoc, false, flatten(mvp));
             gl.uniformMatrix4fv(uMVLoc, false, flatten(view));
         }
@@ -513,9 +549,14 @@ function main() {
         let eye = add(characterPos, camOffset);
         let at = add(characterPos, vec3(0, 1, 0));
         view = lookAt(eye, at, vec3(0, 1, 0));
+        let vpOnly = mult(proj, view);
 
-        drawSkybox(view, proj);
-
+        let lightDirEye  = vec3(lightDirEye4[0], lightDirEye4[1], lightDirEye4[2]);
+        gl.uniform3fv(gl.getUniformLocation(program, "uLightDirection"), flatten(normalize(lightDirEye)));
+        gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(vec4(bulbpos, 1.0)));
+        gl.uniformMatrix4fv(uShadowMatLoc, false, flatten(shadowMatrix));
+        let shadowMat = makeShadow(bulbpos);
+        gl.uniformMatrix4fv(uShadowMatLoc, false, flatten(shadowMat));
         models.forEach(m => {
             if (m.objParsed && m.mtlParsed) {
                 if (!m._initialized) {
@@ -539,8 +580,37 @@ function main() {
                 } else {
                     modelMatrix = mat4();
                 }
-
                 modelMatrices.set(m, modelMatrix);
+
+                let norm = transpose(inverse(modelMatrix));
+                let normalMatrix = [vec3(norm[0][0],norm[0][1],norm[0][2]),vec3(norm[1][0],norm[1][1],norm[1][2]),vec3(norm[2][0],norm[2][1],norm[2][2])];
+
+                let mvModel = mult(view, modelMatrix);
+                let mvpFull = mult(proj, mvModel);
+
+                if (m !== street && !m.isLamp) {
+                    gl.uniform1i(uShadowPassLoc, 1);
+
+                    // For the shadow pass, uMVP must be JUST the camera (vpOnly)
+                    gl.uniformMatrix4fv(uMVPLoc, false, flatten(vpOnly));
+                    gl.uniformMatrix4fv(uModelLoc, false, flatten(modelMatrix));
+
+                    // Prevent the shadow from flickering against the floor
+                    gl.enable(gl.POLYGON_OFFSET_FILL);
+                    gl.polygonOffset(-1.0, -1.0);
+
+                    gl.drawArrays(gl.TRIANGLES, 0, m.numVertices);
+
+                    gl.disable(gl.POLYGON_OFFSET_FILL);
+                }
+                gl.uniform1i(uShadowPassLoc, 0);
+                gl.uniformMatrix4fv(uMVPLoc, false, flatten(mvpFull));
+                gl.uniformMatrix4fv(uModelLoc, false, flatten(modelMatrix));
+                gl.uniformMatrix3fv(uNormalMatLoc, false, flatten(normalMatrix));
+                 // This is just Proj * View
+                gl.uniformMatrix4fv(uMVLoc,        false, flatten(mvModel));
+                gl.uniformMatrix4fv(uModelLoc,     false, flatten(modelMatrix));
+                gl.uniformMatrix3fv(uNormalMatLoc, false, flatten(normalMatrix));
 
                 mvp = mult(proj, mult(view, modelMatrix));
                 gl.uniformMatrix4fv(uMVPLoc, false, flatten(mvp));
@@ -570,7 +640,29 @@ function main() {
                     gl.uniform1i(uTexturedLoc, 0);
                 }
 
+
+
+                // 2. Set uniforms for the NORMAL draw
+                gl.uniform1i(uShadowPassLoc, 0);
+                gl.uniformMatrix4fv(uMVPLoc, false, flatten(mvpFull));
+                gl.uniformMatrix4fv(uMVLoc, false, flatten(mvModel));
+                gl.uniformMatrix4fv(uModelLoc, false, flatten(modelMatrix));
+                gl.uniformMatrix3fv(uNormalMatLoc, false, flatten(normalMatrix));
+
+                // ... (your existing buffer binding code for positions, normals, colors) ...
+
+                // 3. Draw the actual model
                 gl.drawArrays(gl.TRIANGLES, 0, m.numVertices);
+
+                // 4. Draw the SHADOW
+                gl.uniform1i(uShadowPassLoc, 1);
+                // Use the VP-only matrix so the shader's "uMVP * shadowMatrix * uModel" math is correct
+                gl.uniformMatrix4fv(uMVPLoc, false, flatten(vpOnly));
+
+                gl.drawArrays(gl.TRIANGLES, 0, m.numVertices);
+
+                // 5. Reset shadow pass for next object
+                gl.uniform1i(uShadowPassLoc, 0);
             }
         });
 
@@ -579,7 +671,6 @@ function main() {
 
     render();
 }
-
 function getWorldBBox(model, modelMatrix) {
     let mn = model.bbox.min;
     let mx = model.bbox.max;
@@ -665,6 +756,10 @@ function initModelBuffers(gl, model) {
         };
         img.onerror = () => console.error("Failed to load texture:", model.imagePath);
         img.src = model.imagePath;
+    }
+    if (model.isLamp) {
+        bulbpos      = lampPos(model);
+        shadowMatrix = makeShadow(bulbpos);
     }
 }
 
