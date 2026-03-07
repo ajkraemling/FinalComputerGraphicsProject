@@ -1,4 +1,5 @@
 // EXTRA CREDIT
+// JK to subdivide sphere!
 // Our jumping decelerates the character after setting an initial upward jump force
 // Our character collides with the floor and the top of objects, preventing him from falling infinitely
 function main() {
@@ -124,6 +125,12 @@ function main() {
     let lightDirEye = vec3(lightDirEye4[0], lightDirEye4[1], lightDirEye4[2]);
     let uLightDirLoc = gl.getUniformLocation(program, "uLightDirection");
     gl.uniform3fv(uLightDirLoc, flatten(normalize(lightDirEye)));
+
+    const uLightModeLoc = gl.getUniformLocation(program, "uLightMode");
+    gl.uniform1i(uLightModeLoc, 0);
+
+    let lightMode = 0;
+    const lightModeLabels = ["All on", "Diffuse off", "Specular off", "Diffuse+Specular off", "Light off"];
 
     gl.uniform3fv(gl.getUniformLocation(program, "uLightDirection"), flatten(vec3(3.0, 1.0, 1.0)));
     gl.uniform4fv(gl.getUniformLocation(program, "uLightColor"), flatten([1, 1, 1, 1]));
@@ -297,6 +304,11 @@ function main() {
                     cubeSubdivisions -= 1;
                     updateCubeBuffersForSubdivision(cubeSubdivisions);
                 }
+                break;
+            case "L":
+                lightMode = (lightMode + 1) % 5;
+                gl.uniform1i(uLightModeLoc, lightMode);
+                document.getElementById('mode').textContent = "Light mode: " + lightModeLabels[lightMode];
                 break;
         }
     });

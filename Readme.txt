@@ -16,7 +16,7 @@ CLICK + DRAG - Look around
 CLICK - Swing sword
 QE - Make character look left and right, then rotate 
 ????? - Toggle shadows
-????? - Toggles diffuse and specular components on and off
+L - Toggles off diffuse, then toggles off specular, then both, then turns off the light
 JK - subdivies yellow square
 
 We met the criteria for this project by adding:
@@ -27,14 +27,14 @@ We met the criteria for this project by adding:
 5. Dog is textured, with a default texture
 6. Camera moves with hollow knight and rotates with mouse click and drag
 7. Hollow knight moves as the parent, head moves with body as child, sword moves with head rotation
-8. Shadow from ???????????
+8. Shadow from Lamp on characters
 9. Reflection from door
 10. Refraction from other door
 11. Skybox
 12.
   a - animation controlled by WASDQE and mouse
   b - ?????? Toggles shadows
-  c - ?????? Toggles spot light 
+  c - L Toggles spot light 
   d - Control camera movement with keyboard or mouse
 
 
@@ -53,5 +53,6 @@ Avi
 - 
 
 Extra Credit
+JK to subdivide sphere!
 Our jumping decelerates the character after setting an initial upward jump force
 Our character collides with the floor and the top of objects, preventing him from falling infinitely

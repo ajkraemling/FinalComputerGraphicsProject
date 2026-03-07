@@ -78,6 +78,8 @@
         varying vec3 N, V, pos;
         uniform vec4 lightPosition;
 
+        uniform int uLightMode;
+
         // Phong lighting uniforms (file 1)
         uniform vec4 lightDiffuse;
         uniform vec4 lightSpecular;
@@ -121,7 +123,25 @@
             vec4 specular = lightSpecular * materialSpecular * specFactor;
 
             vec4 ambient = lightAmbient * materialAmbient;
-            vec4 color = ambient + diffuse + specular;
+            vec4 color;
+            if (uLightMode == 4) {
+                // light fully off — just show base color
+                color = baseColor;
+            } else {
+                vec4 diffuse  = vec4(0.0);
+                vec4 specular = vec4(0.0);
+
+                if (uLightMode == 0 || uLightMode == 2) {
+                    // diffuse on
+                    diffuse = lightDiffuse * baseColor * max(dot(N, L), 0.0);
+                }
+                if (uLightMode == 0 || uLightMode == 1) {
+                    // specular on
+                    float specFactor = pow(max(dot(R, V), 0.0), shininess);
+                    specular = lightSpecular * materialSpecular * specFactor;
+                }
+                color = ambient + diffuse + specular;
+            }
             color.a = 1.0;
             gl_FragColor = color;
         }
