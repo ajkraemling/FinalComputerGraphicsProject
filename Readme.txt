@@ -47,7 +47,7 @@ Alexander Kraemling
 - Initial keyboard/ movement controls, jumping
 
 Cameron
-- 
+-  Lighting(Relfection/refraction/Shading/Shadows) 
 
 Avi 
 - 

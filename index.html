@@ -95,8 +95,13 @@
         uniform sampler2D uSkySampler;
         uniform bool uTextured;
         uniform bool isSkybox;
+        uniform bool uShadowMode;
 
         void main() {
+            if (uShadowMode){
+                gl_FragColor = vec4(0.0,0.0,0.0,1.0);
+                return;
+                }
             if (isSkybox) {
                 vec3 dir = normalize(fWorldPos);
                 float u = 0.5 - atan(dir.z, dir.x) / (2.0 * 3.14159265);

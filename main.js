@@ -144,6 +144,19 @@ function main() {
     gl.uniform4fv(gl.getUniformLocation(program, "materialAmbient"), flatten([0.2, 0.2, 0.2, 1]));
     gl.uniform1f(gl.getUniformLocation(program, "shininess"), 32.0);
 
+    const uShadowModeLoc = gl.getUniformLocation(program, "uShadowMode");
+    gl.uniform1i(uShadowModeLoc, 0);
+
+    function makeShadow(light) {
+        let lx = light[0], ly = light[1], lz = light[2];
+        let m = mat4();
+        m[3][3] = 0;
+        m[3][1] = -1.0/ly;
+
+        let shadowMatrix = mult(m, translate(-lx,-ly,-lz));
+        shadowMatrix = mult(translate(lx,ly,lz),shadowMatrix);
+        return shadowMatrix;
+    }
     // Cube subdivision control 
     let cubeSubdivisions = 0;
     const maxCubeSubdivisions = 5;
@@ -288,7 +301,7 @@ function main() {
     prepareCubeSubdivisionLevels(maxCubeSubdivisions);
     // initialize buffers for level 0
     updateCubeBuffersForSubdivision(cubeSubdivisions);
-
+    let yesShadow = true;
     // keyboard handler
     window.addEventListener('keydown', function (e) {
         const key = e.key.toUpperCase();
@@ -310,6 +323,8 @@ function main() {
                 gl.uniform1i(uLightModeLoc, lightMode);
                 document.getElementById('mode').textContent = "Light mode: " + lightModeLabels[lightMode];
                 break;
+            case "X":
+                yesShadow = !yesShadow;
         }
     });
 
@@ -539,6 +554,25 @@ function main() {
 
             gl.drawArrays(gl.TRIANGLES, 0, cubeNumVertices);
 
+            const shadowLight = vec3(0.0, 5.0, 0.0);
+            const sMat       = makeShadow(shadowLight);
+            const shadowModel = mult(sMat, model);
+            const shadowMVP   = mult(proj, mult(view, shadowModel));
+
+            gl.uniformMatrix4fv(uMVPLoc, false, flatten(shadowMVP));
+            gl.uniform1i(uShadowModeLoc, 1);
+            gl.depthMask(false);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, cubePosBuffer);
+            gl.vertexAttribPointer(vPositionLoc, 4, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(vPositionLoc);
+            gl.disableVertexAttribArray(vNormalLoc);
+            gl.disableVertexAttribArray(vColorLoc);
+            gl.disableVertexAttribArray(vTexCoordLoc);
+
+            gl.drawArrays(gl.TRIANGLES, 0, cubeNumVertices);
+            gl.depthMask(true);
+            gl.uniform1i(uShadowModeLoc, 0);
             // restore global uMVP/uMV for the rest of the scene 
             gl.uniformMatrix4fv(uMVPLoc, false, flatten(mvp));
             gl.uniformMatrix4fv(uMVLoc, false, flatten(view));
@@ -638,7 +672,47 @@ function main() {
                 gl.drawArrays(gl.TRIANGLES, 0, m.numVertices);
             }
         });
+        if (yesShadow && lightMode !== 4) {
+            const shadowLight = vec3(0.0, 5.0, 0.0);
+            const sMat = makeShadow(shadowLight);
 
+            gl.uniform1i(uShadowModeLoc, 1);
+            gl.disable(gl.DEPTH_TEST);
+            gl.depthMask(false);
+            gl.uniform1i(uTexturedLoc, 0);
+
+            const shadowCasters = [body, head, sword, dog];
+            shadowCasters.forEach(m => {
+                if (!m._initialized || !m.objParsed || !m.mtlParsed) return;
+
+                let modelMatrix;
+                if (m === body) modelMatrix = buildBodyMatrix();
+                else if (m === head) modelMatrix = buildHeadMatrix();
+                else if (m === sword) modelMatrix = buildSwordMatrix();
+                else if (m === dog) modelMatrix = mult(translate(3.0, 1.5, 0.0), scalem(1, 1, 1));
+                else return;
+
+                // exactly like the reference: mult(shadowMatrix, modelMatrix)
+                // then proj * view * (shadowMatrix * modelMatrix)
+                let shadowModel = mult(sMat, modelMatrix);
+                let shadowMVP = mult(proj, mult(view, shadowModel));
+
+                gl.uniformMatrix4fv(uMVPLoc, false, flatten(shadowMVP));
+                gl.uniformMatrix4fv(uModelLoc, false, flatten(shadowModel));
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, m.vBuffer);
+                gl.vertexAttribPointer(vPositionLoc, 4, gl.FLOAT, false, 0, 0);
+                gl.enableVertexAttribArray(vPositionLoc);
+                gl.disableVertexAttribArray(vNormalLoc);
+                gl.disableVertexAttribArray(vColorLoc);
+                gl.disableVertexAttribArray(vTexCoordLoc);
+
+                gl.drawArrays(gl.TRIANGLES, 0, m.numVertices);
+            });
+            gl.enable(gl.DEPTH_TEST);
+            gl.depthMask(true);
+            gl.uniform1i(uShadowModeLoc, 0);
+        }
         requestAnimFrame(render);
     }
 
