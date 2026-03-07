@@ -46,11 +46,13 @@ Alexander Kraemling
 - Skybox
 - Initial keyboard/ movement controls, jumping
 
-Cameron
+Cameron Gleaton
 - 
 
-Avi 
-- 
+Avikshit Pal
+- Fixed models for site
+- Hierarchical model of body, head, sword
+- Mouse controls for character rotation
 
 Extra Credit
 JK to subdivide sphere!
