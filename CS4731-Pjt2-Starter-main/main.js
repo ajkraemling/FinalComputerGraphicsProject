@@ -546,6 +546,13 @@ function main() {
         let at  = add(characterPos, vec3(0, 1.5, 0));
         view = lookAt(eye, at, vec3(0, 1, 0));
 
+        const uModelLoc      = gl.getUniformLocation(program, "uModel");
+        const uNormalMatLoc  = gl.getUniformLocation(program, "uNormalMatrix");
+        const uLightPosLoc   = gl.getUniformLocation(program, "lightPosition");
+
+        // Pass light as world-space point (above the lamp)
+        gl.uniform4fv(uLightPosLoc, flatten(vec4(0.0, 5.0, 0.0, 1.0)));
+
         drawSkybox(view, proj);
 
         models.forEach(m => {
@@ -581,6 +588,15 @@ function main() {
 
                 mvp = mult(proj, mult(view, modelMatrix));
                 gl.uniformMatrix4fv(uMVPLoc, false, flatten(mvp));
+
+                let norm = transpose(inverse(modelMatrix));
+                let normalMatrix = [
+                    vec3(norm[0][0], norm[0][1], norm[0][2]),
+                    vec3(norm[1][0], norm[1][1], norm[1][2]),
+                    vec3(norm[2][0], norm[2][1], norm[2][2])
+                ];
+                gl.uniformMatrix4fv(uModelLoc,     false, flatten(modelMatrix));
+                gl.uniformMatrix3fv(uNormalMatLoc, false, flatten(normalMatrix));
 
                 gl.bindBuffer(gl.ARRAY_BUFFER, m.vBuffer);
                 gl.vertexAttribPointer(vPositionLoc, 4, gl.FLOAT, false, 0, 0);

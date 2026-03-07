@@ -31,6 +31,8 @@
 
         uniform mat4 uMVP;
         uniform mat4 uMV;
+        uniform mat4 uModel;
+        uniform mat3 uNormalMatrix;
         uniform mat4 uSkyboxMVP;
         uniform bool isSkybox;
 
@@ -40,20 +42,26 @@
         varying vec3 fNormal;
         varying vec2 fTexCoord;
         varying vec3 fWorldPos;
+        varying vec3 N, V, pos;   // ADD THIS
 
         void main() {
             if (isSkybox) {
                 fWorldPos = vPosition.xyz;
                 gl_Position = uSkyboxMVP * vPosition;
-            } else {
-                vec4 posEye = uMV * vPosition;
-                fPositionEye = posEye.xyz;
-                fNormalEye = normalize((uMV * vec4(vNormal, 0.0)).xyz);
-                fNormal = normalize(vNormal);
-                fTexCoord = vTexCoord;
-                fColor = vColor;
-                gl_Position = uMVP * vPosition;
+                return;
             }
+            vec4 posEye = uMV * vPosition;
+            fPositionEye = posEye.xyz;
+            fNormalEye = normalize((uMV * vec4(vNormal, 0.0)).xyz);
+            fNormal = normalize(vNormal);
+            fTexCoord = vTexCoord;
+            fColor = vColor;
+
+            pos = (uModel * vPosition).xyz;
+            N = normalize(uNormalMatrix * vNormal);
+            V = normalize(-fPositionEye);
+
+            gl_Position = uMVP * vPosition;
         }
     </script>
 
@@ -67,7 +75,8 @@
         varying vec2 fTexCoord;
         varying vec3 fWorldPos;
 
-        uniform vec3 uLightDirection;
+        varying vec3 N, V, pos;
+        uniform vec4 lightPosition;
 
         // Phong lighting uniforms (file 1)
         uniform vec4 lightDiffuse;
@@ -102,22 +111,16 @@
                 baseColor = fColor;
             }
 
-            vec3 N = normalize(fNormalEye);
-            vec3 L = normalize(uLightDirection);
-            vec3 V = normalize(-fPositionEye);
+            vec3 L = normalize(lightPosition.xyz - pos);
 
-            // Diffuse
             float nDotL = max(dot(N, L), 0.0);
             vec4 diffuse = lightDiffuse * baseColor * nDotL;
 
-            // Specular (Phong reflection)
             vec3 R = reflect(-L, N);
             float specFactor = pow(max(dot(R, V), 0.0), shininess);
             vec4 specular = lightSpecular * materialSpecular * specFactor;
 
-            // Ambient
             vec4 ambient = lightAmbient * materialAmbient;
-
             vec4 color = ambient + diffuse + specular;
             color.a = 1.0;
             gl_FragColor = color;
