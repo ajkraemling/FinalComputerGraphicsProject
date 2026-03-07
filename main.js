@@ -595,7 +595,7 @@ function main() {
                     vec3(norm[1][0], norm[1][1], norm[1][2]),
                     vec3(norm[2][0], norm[2][1], norm[2][2])
                 ];
-                gl.uniformMatrix4fv(uModelLoc,     false, flatten(modelMatrix));
+                gl.uniformMatrix4fv(uModelLoc, false, flatten(modelMatrix));
                 gl.uniformMatrix3fv(uNormalMatLoc, false, flatten(normalMatrix));
 
                 gl.bindBuffer(gl.ARRAY_BUFFER, m.vBuffer);
